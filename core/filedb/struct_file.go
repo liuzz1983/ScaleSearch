@@ -1,6 +1,5 @@
 package filedb
 
-
 type StructFile struct {
 	file     File
 	name     string
@@ -27,12 +26,12 @@ func (fs *StructFile) Write(b []byte) (n int, err error) {
 	return fs.file.Write(b)
 }
 
-func (fs *StructFile) WriteAt(b []byte, offset int64 ) (n int, err error) {
-	return fs.file.WriteAt(b,offset)
+func (fs *StructFile) WriteAt(b []byte, offset int64) (n int, err error) {
+	return fs.file.WriteAt(b, offset)
 }
 
-func (fs *StructFile) ReadAt( b []byte,offset int64) (n int, err error ) {
-	return fs.file.ReadAt( b,offset)
+func (fs *StructFile) ReadAt(b []byte, offset int64) (n int, err error) {
+	return fs.file.ReadAt(b, offset)
 }
 
 func (fs *StructFile) Tell() (n int64, err error) {

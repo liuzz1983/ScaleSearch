@@ -2,6 +2,7 @@ package codec
 
 import (
 	"github.com/liuzz1983/ScaleSearch/core/filedb"
+	"github.com/liuzz1983/ScaleSearch/core/codec"
 )
 
 type W3Codec struct {
@@ -10,7 +11,7 @@ type W3Codec struct {
 	inlineLimit int32
 }
 
-func (codec *W3Codec) TermsReader(storage filedb.Storage, segment string) (TermsReader, error) {
+func (codec *W3Codec) TermsReader(storage filedb.Storage, segment string) (codec.TermsReader, error) {
 	return nil, nil
 }
 

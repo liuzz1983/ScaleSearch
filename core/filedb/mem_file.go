@@ -380,7 +380,7 @@ func (f *file) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (f *file)WriteAt(p []byte,off int64) (int, error ) {
+func (f *file) WriteAt(p []byte, off int64) (int, error) {
 	if !f.write {
 		return 0, errors.New("leveldb/memfs: file was not created for writing")
 	}
@@ -390,9 +390,8 @@ func (f *file)WriteAt(p []byte,off int64) (int, error ) {
 	if off >= int64(len(f.n.data)) {
 		return 0, io.EOF
 	}
-	return copy(f.n.data[off:],p), nil
+	return copy(f.n.data[off:], p), nil
 }
-
 
 func (f *file) Stat() (os.FileInfo, error) {
 	return f.n, nil

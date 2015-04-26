@@ -17,5 +17,5 @@ type IndexReader interface {
 	AllDocIds() []string
 	IterDocs() string
 
-	IsDeleted(docnum int )
+	IsDeleted(docnum int)
 }

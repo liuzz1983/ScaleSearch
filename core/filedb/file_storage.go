@@ -1,11 +1,11 @@
 package filedb
 
 import (
+	"github.com/liuzz1983/ScaleSearch/core"
 	"io"
 	"os"
 	"path/filepath"
 	_ "time"
-	"github.com/liuzz1983/ScaleSearch/core"
 )
 
 type Storage interface {
@@ -14,9 +14,9 @@ type Storage interface {
 	//CreateIndex(indexName string) error
 	//OpenIndex(indexName string) interface{}
 	//IndexExists(indexName string) bool
-	CreateFile(name string,args map[string]string) (File, error)
-	OpenFile(name string,args map[string]string) (File, error)
-	List() ([]string,error)
+	CreateFile(name string, args map[string]string) (File, error)
+	OpenFile(name string, args map[string]string) (File, error)
+	List() ([]string, error)
 	FileExists(name string) bool
 	//FileModified(name string) (*time.Time, error)
 	FileLength(name string) (int64, error)
@@ -33,15 +33,15 @@ type FileStorage struct {
 	readOnly    bool
 	supportMMap bool
 	folder      string
-	system FileSystem
+	system      FileSystem
 }
 
-func NewFileStorage(name string,fileSystem FileSystem ) (Storage, error) {
+func NewFileStorage(name string, fileSystem FileSystem) (Storage, error) {
 	file := FileStorage{
 		readOnly:    false,
 		supportMMap: false,
 		folder:      name,
-		system: fileSystem,
+		system:      fileSystem,
 	}
 	return &file, nil
 }
@@ -107,12 +107,12 @@ func (fs *FileStorage) FileExists(name string) bool {
 	return true
 }
 
-func (rs *FileStorage) CreateFile(name string)(File,error) {
-	return nil,core.ErrNotImplement
+func (rs *FileStorage) CreateFile(name string, args map[string]string) (File, error) {
+	panic(core.ErrNotImplement)
 }
 
-func (rs *FileStorage) OpenFile(name string)(File,error) {
-	return nil, core.ErrNotImplement
+func (rs *FileStorage) OpenFile(name string, args map[string]string) (File, error) {
+	panic(core.ErrNotImplement)
 }
 
 /*func (fs *FileStorage) FileModified(name string) (*time.Time, error) {
@@ -157,7 +157,7 @@ func (fs *FileStorage) Optimize() error {
 
 func (fs *FileStorage) TmpStorage() (Storage, error) {
 	tmpDir := os.TempDir()
-	return NewFileStorage(tmpDir,fs.system)
+	return NewFileStorage(tmpDir, fs.system)
 }
 
 func (fs *FileStorage) Sync() error {
