@@ -1,11 +1,13 @@
 package filedb
 
 import (
-	"github.com/liuzz1983/ScaleSearch/core"
+	"github.com/liuzz1983/scalesearch/core/errors"
+	"github.com/liuzz1983/scalesearch/utils/fs"
 	"io"
 	"os"
 	"path/filepath"
-	_ "time"
+	"sync"
+	"time"
 )
 
 type Storage interface {
@@ -14,8 +16,8 @@ type Storage interface {
 	//CreateIndex(indexName string) error
 	//OpenIndex(indexName string) interface{}
 	//IndexExists(indexName string) bool
-	CreateFile(name string, args map[string]string) (File, error)
-	OpenFile(name string, args map[string]string) (File, error)
+	CreateFile(name string, args map[string]string) (fs.File, error)
+	OpenFile(name string, args map[string]string) (fs.File, error)
 	List() ([]string, error)
 	FileExists(name string) bool
 	//FileModified(name string) (*time.Time, error)
@@ -33,10 +35,10 @@ type FileStorage struct {
 	readOnly    bool
 	supportMMap bool
 	folder      string
-	system      FileSystem
+	system      fs.FileSystem
 }
 
-func NewFileStorage(name string, fileSystem FileSystem) (Storage, error) {
+func NewFileStorage(name string, fileSystem fs.FileSystem) (Storage, error) {
 	file := FileStorage{
 		readOnly:    false,
 		supportMMap: false,
@@ -46,13 +48,13 @@ func NewFileStorage(name string, fileSystem FileSystem) (Storage, error) {
 	return &file, nil
 }
 
-func (fs *FileStorage) Create() error {
-	dirname, err := filepath.Abs(fs.folder)
-	err = fs.system.MkdirAll(dirname, os.ModePerm)
+func (store *FileStorage) Create() error {
+	dirname, err := filepath.Abs(store.folder)
+	err = store.system.MkdirAll(dirname, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	dir, err := fs.system.Stat(dirname)
+	dir, err := store.system.Stat(dirname)
 	if err != nil {
 		return err
 	}
@@ -62,109 +64,108 @@ func (fs *FileStorage) Create() error {
 	return nil
 }
 
-func (fs *FileStorage) filePath(name string) string {
-	return filepath.Join(fs.folder, name)
+func (store *FileStorage) filePath(name string) string {
+	return filepath.Join(store.folder, name)
 }
 
-func (fs *FileStorage) fileStat(name string) (os.FileInfo, error) {
-	path := fs.filePath(name)
-	info, err := fs.system.Stat(path)
+func (store *FileStorage) fileStat(name string) (os.FileInfo, error) {
+	path := store.filePath(name)
+	info, err := store.system.Stat(path)
 	return info, err
 }
 
 //
-func (fs *FileStorage) Destory() error {
-	if fs.readOnly {
-		return core.ErrIsReadOnly
+func (store *FileStorage) Destory() error {
+	if store.readOnly {
+		return errors.ErrIsReadOnly
 	}
-	names, err := fs.List()
+	names, err := store.List()
 	if err != nil {
 		return err
 	}
 	for _, name := range names {
-		fileName := filepath.Join(fs.folder, name)
-		err := fs.system.Remove(fileName)
+		fileName := filepath.Join(store.folder, name)
+		err := store.system.Remove(fileName)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = fs.system.Remove(fs.folder)
+	err = store.system.Remove(store.folder)
 	return err
 }
 
 // need consider
-func (fs *FileStorage) List() ([]string, error) {
-	return fs.system.List(fs.folder)
+func (store *FileStorage) List() ([]string, error) {
+	return store.system.List(store.folder)
 }
 
-func (fs *FileStorage) FileExists(name string) bool {
-	fileName := fs.filePath(name)
-	_, err := fs.system.Stat(fileName)
+func (store *FileStorage) FileExists(name string) bool {
+	fileName := store.filePath(name)
+	_, err := store.system.Stat(fileName)
 	if os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
-func (rs *FileStorage) CreateFile(name string, args map[string]string) (File, error) {
-	panic(core.ErrNotImplement)
+func (rs *FileStorage) CreateFile(name string, args map[string]string) (fs.File, error) {
+	panic(errors.ErrNotImplement)
 }
 
-func (rs *FileStorage) OpenFile(name string, args map[string]string) (File, error) {
-	panic(core.ErrNotImplement)
+func (rs *FileStorage) OpenFile(name string, args map[string]string) (fs.File, error) {
+	panic(errors.ErrNotImplement)
 }
 
-/*func (fs *FileStorage) FileModified(name string) (*time.Time, error) {
-	if !fs.FileExists(name) {
+/*func (store *FileStorage) FileModified(name string) (*time.Time, error) {
+	if !store.FileExists(name) {
 		return nil, ErrFileNotExists
 	}
 	return nil, nil
 }*/
 
-func (fs *FileStorage) FileLength(name string) (int64, error) {
-	stat, err := fs.fileStat(name)
+func (store *FileStorage) FileLength(name string) (int64, error) {
+	stat, err := store.fileStat(name)
 	if err != nil {
 		return 0, err
 	}
 	return stat.Size(), nil
 }
 
-func (fs *FileStorage) DeleteFile(name string) error {
-	fileName := fs.filePath(name)
-	err := fs.system.Remove(fileName)
+func (store *FileStorage) DeleteFile(name string) error {
+	fileName := store.filePath(name)
+	err := store.system.Remove(fileName)
 	return err
 }
 
-func (fs *FileStorage) RenameFile(oldName string, newName string) error {
-	oldPath := fs.filePath(oldName)
-	newPath := fs.filePath(newName)
-	return fs.system.Rename(oldPath, newPath)
+func (store *FileStorage) RenameFile(oldName string, newName string) error {
+	oldPath := store.filePath(oldName)
+	newPath := store.filePath(newName)
+	return store.system.Rename(oldPath, newPath)
 }
 
-func (fs *FileStorage) Lock(name string) (fl io.Closer, err error) {
-	path := fs.filePath(name)
-	return fs.system.Lock(path)
+func (store *FileStorage) Lock(name string) (fl io.Closer, err error) {
+	path := store.filePath(name)
+	return store.system.Lock(path)
 }
 
-func (fs *FileStorage) Close() error {
+func (store *FileStorage) Close() error {
 	return nil
 }
 
-func (fs *FileStorage) Optimize() error {
+func (store *FileStorage) Optimize() error {
 	return nil
 }
 
-func (fs *FileStorage) TmpStorage() (Storage, error) {
+func (store *FileStorage) TmpStorage() (Storage, error) {
 	tmpDir := os.TempDir()
-	return NewFileStorage(tmpDir, fs.system)
+	return NewFileStorage(tmpDir, store.system)
 }
 
-func (fs *FileStorage) Sync() error {
-	return syncDir(fs.folder)
+func (store *FileStorage) Sync() error {
+	return fs.SyncDir(store.folder)
 }
 
-/*
 type RamStorage struct {
 	files  map[string]string
 	locks  map[string]sync.Mutex
@@ -213,7 +214,7 @@ func (rs *RamStorage) FileExists(name string) bool {
 }
 func (rs *RamStorage) FileLength(name string) (int64, error) {
 	if !rs.FileExists(name) {
-		return -1, ErrFileNotExists
+		return -1, errors.ErrFileNotExists
 	}
 	memLen := len(rs.files[name])
 	return int64(memLen), nil
@@ -225,7 +226,7 @@ func (rs *RamStorage) FileModified(name string) (*time.Time, error) {
 
 func (rs *RamStorage) DeleteFile(name string) error {
 	if !rs.FileExists(name) {
-		return ErrFileNotExists
+		return errors.ErrFileNotExists
 	}
 	delete(rs.files, name)
 	return nil
@@ -233,10 +234,10 @@ func (rs *RamStorage) DeleteFile(name string) error {
 
 func (rs *RamStorage) RenameFile(oldName string, newName string) error {
 	if !rs.FileExists(oldName) {
-		return ErrFileNotExists
+		return errors.ErrFileNotExists
 	}
 	if rs.FileExists(newName) {
-		return ErrFileExists
+		return errors.ErrFileExists
 	}
 	content := rs.files[oldName]
 	delete(rs.files, oldName)
@@ -259,4 +260,3 @@ func (rs *RamStorage) Lock(name string) {
 func (rs *RamStorage) TmpStorage(name string) {
 
 }
-*/

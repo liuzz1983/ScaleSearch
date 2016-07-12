@@ -6,7 +6,7 @@
 // +build !darwin,!amd64
 // +build !windows
 
-package filedb
+package fs
 
 import (
 	"fmt"

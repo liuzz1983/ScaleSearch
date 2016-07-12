@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package memfs provides a memory-backed db.FileSystem implementation.
+// Package memfs provides a memory-backed db.MemFileSystem implementation.
 //
 // It can be useful for tests, and also for LevelDB instances that should not
 // ever touch persistent storage, such as a web browser's private browsing mode.
-package filedb
+package fs
 
 import (
 	"bytes"
@@ -28,9 +28,9 @@ func (nopCloser) Close() error {
 	return nil
 }
 
-// New returns a new memory-backed 112.FileSystem implementation.
-func New() FileSystem {
-	return &fileSystem{
+// New returns a new memory-backed 112.MemFileSystem implementation.
+func New() *MemFileSystem {
+	return &MemFileSystem{
 		root: &node{
 			children: make(map[string]*node),
 			isDir:    true,
@@ -38,13 +38,13 @@ func New() FileSystem {
 	}
 }
 
-// fileSystem implements db.FileSystem.
-type fileSystem struct {
+// MemFileSystem implements db.MemFileSystem.
+type MemFileSystem struct {
 	mu   sync.Mutex
 	root *node
 }
 
-func (y *fileSystem) String() string {
+func (y *MemFileSystem) String() string {
 	y.mu.Lock()
 	defer y.mu.Unlock()
 
@@ -69,7 +69,7 @@ func (y *fileSystem) String() string {
 //   - "/", "y", false
 //   - "/y/", "z", false
 //   - "/y/z/", "", true
-func (y *fileSystem) walk(fullname string, f func(dir *node, frag string, final bool) error) error {
+func (y *MemFileSystem) walk(fullname string, f func(dir *node, frag string, final bool) error) error {
 	y.mu.Lock()
 	defer y.mu.Unlock()
 
@@ -109,8 +109,8 @@ func (y *fileSystem) walk(fullname string, f func(dir *node, frag string, final 
 	return nil
 }
 
-func (y *fileSystem) Create(fullname string) (File, error) {
-	var ret *file
+func (y *MemFileSystem) Create(fullname string) (File, error) {
+	var ret *MemFile
 	err := y.walk(fullname, func(dir *node, frag string, final bool) error {
 		if final {
 			if frag == "" {
@@ -118,7 +118,7 @@ func (y *fileSystem) Create(fullname string) (File, error) {
 			}
 			n := &node{name: frag}
 			dir.children[frag] = n
-			ret = &file{
+			ret = &MemFile{
 				n:     n,
 				write: true,
 			}
@@ -131,15 +131,15 @@ func (y *fileSystem) Create(fullname string) (File, error) {
 	return ret, nil
 }
 
-func (y *fileSystem) Open(fullname string) (File, error) {
-	var ret *file
+func (y *MemFileSystem) Open(fullname string) (File, error) {
+	var ret *MemFile
 	err := y.walk(fullname, func(dir *node, frag string, final bool) error {
 		if final {
 			if frag == "" {
 				return errors.New("leveldb/memfs: empty file name")
 			}
 			if n := dir.children[frag]; n != nil {
-				ret = &file{
+				ret = &MemFile{
 					n:    n,
 					read: true,
 				}
@@ -160,7 +160,7 @@ func (y *fileSystem) Open(fullname string) (File, error) {
 	return ret, nil
 }
 
-func (y *fileSystem) Remove(fullname string) error {
+func (y *MemFileSystem) Remove(fullname string) error {
 	return y.walk(fullname, func(dir *node, frag string, final bool) error {
 		if final {
 			if frag == "" {
@@ -176,7 +176,7 @@ func (y *fileSystem) Remove(fullname string) error {
 	})
 }
 
-func (y *fileSystem) Rename(oldname, newname string) error {
+func (y *MemFileSystem) Rename(oldname, newname string) error {
 	var n *node
 	err := y.walk(oldname, func(dir *node, frag string, final bool) error {
 		if final {
@@ -205,7 +205,7 @@ func (y *fileSystem) Rename(oldname, newname string) error {
 	})
 }
 
-func (y *fileSystem) MkdirAll(dirname string, perm os.FileMode) error {
+func (y *MemFileSystem) MkdirAll(dirname string, perm os.FileMode) error {
 	return y.walk(dirname, func(dir *node, frag string, final bool) error {
 		if frag == "" {
 			if final {
@@ -229,13 +229,13 @@ func (y *fileSystem) MkdirAll(dirname string, perm os.FileMode) error {
 	})
 }
 
-func (y *fileSystem) Lock(fullname string) (io.Closer, error) {
-	// FileSystem.Lock excludes other processes, but other processes cannot
+func (y *MemFileSystem) Lock(fullname string) (io.Closer, error) {
+	// MemFileSystem.Lock excludes other processes, but other processes cannot
 	// see this process' memory, so Lock is a no-op.
 	return nopCloser{}, nil
 }
 
-func (y *fileSystem) List(dirname string) ([]string, error) {
+func (y *MemFileSystem) List(dirname string) ([]string, error) {
 	if !strings.HasSuffix(dirname, sep) {
 		dirname += sep
 	}
@@ -255,7 +255,7 @@ func (y *fileSystem) List(dirname string) ([]string, error) {
 	return ret, err
 }
 
-func (y *fileSystem) Stat(name string) (os.FileInfo, error) {
+func (y *MemFileSystem) Stat(name string) (os.FileInfo, error) {
 	f, err := y.Open(name)
 	if err != nil {
 		if pe, ok := err.(*os.PathError); ok {
@@ -263,7 +263,9 @@ func (y *fileSystem) Stat(name string) (os.FileInfo, error) {
 		}
 		return nil, err
 	}
+
 	defer f.Close()
+
 	return f.Stat()
 }
 
@@ -330,17 +332,17 @@ func (f *node) dump(w *bytes.Buffer, level int) {
 }
 
 // file is a reader or writer of a node's data, and implements db.File.
-type file struct {
+type MemFile struct {
 	n           *node
 	rpos        int
 	read, write bool
 }
 
-func (f *file) Close() error {
+func (f *MemFile) Close() error {
 	return nil
 }
 
-func (f *file) Read(p []byte) (int, error) {
+func (f *MemFile) Read(p []byte) (int, error) {
 	if !f.read {
 		return 0, errors.New("leveldb/memfs: file was not opened for reading")
 	}
@@ -355,7 +357,7 @@ func (f *file) Read(p []byte) (int, error) {
 	return n, nil
 }
 
-func (f *file) ReadAt(p []byte, off int64) (int, error) {
+func (f *MemFile) ReadAt(p []byte, off int64) (int, error) {
 	if !f.read {
 		return 0, errors.New("leveldb/memfs: file was not opened for reading")
 	}
@@ -368,7 +370,7 @@ func (f *file) ReadAt(p []byte, off int64) (int, error) {
 	return copy(p, f.n.data[off:]), nil
 }
 
-func (f *file) Write(p []byte) (int, error) {
+func (f *MemFile) Write(p []byte) (int, error) {
 	if !f.write {
 		return 0, errors.New("leveldb/memfs: file was not created for writing")
 	}
@@ -380,7 +382,7 @@ func (f *file) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (f *file) WriteAt(p []byte, off int64) (int, error) {
+func (f *MemFile) WriteAt(p []byte, off int64) (int, error) {
 	if !f.write {
 		return 0, errors.New("leveldb/memfs: file was not created for writing")
 	}
@@ -393,10 +395,10 @@ func (f *file) WriteAt(p []byte, off int64) (int, error) {
 	return copy(f.n.data[off:], p), nil
 }
 
-func (f *file) Stat() (os.FileInfo, error) {
+func (f *MemFile) Stat() (os.FileInfo, error) {
 	return f.n, nil
 }
 
-func (f *file) Sync() error {
+func (f *MemFile) Sync() error {
 	return nil
 }

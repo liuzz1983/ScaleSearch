@@ -1,6 +1,6 @@
 package core
 
-type IndexReader interface {
+type Reader interface {
 	Codec()
 	Segment()
 	Storage()

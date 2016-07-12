@@ -1,10 +1,10 @@
-package filedb
+package fs
 
 import (
 	"os"
 )
 
-func syncDir(name string) error {
+func SyncDir(name string) error {
 	f, err := os.Open(name)
 	if err != nil {
 		return err

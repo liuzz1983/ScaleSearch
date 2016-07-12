@@ -1,10 +1,13 @@
 package filedb
 
 import (
-	_ "bytes"
-	_ "encoding/binary"
 	"encoding/json"
-	_ "io"
+	"github.com/liuzz1983/scalesearch/utils"
+)
+
+var (
+	DEFAULT_MAGIC   = []byte("HSH3")
+	HASH_FUNCTIOONS = [...]hashFunc{cdbHash}
 )
 
 type hashFunc func(key []byte) uint32
@@ -18,29 +21,25 @@ var cdbHash hashFunc = func(key []byte) uint32 {
 	return h
 }
 
-var (
-	HASH_FUNCTIOONS = [...]hashFunc{cdbHash}
-)
+type dictionaryEntry struct {
+	pos uint64
+	num uint32
+}
 
 type bucketEntry struct {
 	key uint32
-	pos int64
+	pos uint64
 }
 
 type bucketEntries struct {
 	items []bucketEntry
 }
 
-func (e *bucketEntries) Add(key uint32, pos int64) {
+func (e *bucketEntries) Add(key uint32, pos uint64) {
 	if e.items == nil {
 		e.items = make([]bucketEntry, 0, 10)
 	}
 	e.items = append(e.items, bucketEntry{key, pos})
-}
-
-type dictionaryEntry struct {
-	pos int64
-	num int
 }
 
 type HashWriter struct {
@@ -72,25 +71,21 @@ func NewHashWriter(file *StructFile, magic []byte) (*HashWriter, error) {
 	writer.buckets = make([]bucketEntries, 0, 256)
 	writer.dictionary = make([]dictionaryEntry, 0, 256)
 
-	//buf := new(bytes.Buffer)
-
-	//binary.Write(buf, binary.LittleEndian, &p)
-
-	err := writeBinary(writer.file, magic)
+	err := utils.WriteBytes(file, magic)
 	if err != nil {
 		return writer, err
 	}
-	err = writeBinary(writer.file, writer.hashType)
+	err = utils.WriteByte(writer.file, writer.hashType)
 	if err != nil {
 		return writer, err
 	}
 
 	//Unused future expansion bits
-	err = writeBinary(writer.file, int32(0))
+	err = utils.WriteInt32(writer.file, int32(0))
 	if err != nil {
 		return writer, err
 	}
-	err = writeBinary(writer.file, int32(0))
+	err = utils.WriteInt32(writer.file, int32(0))
 	if err != nil {
 		return writer, err
 	}
@@ -104,38 +99,38 @@ func (writer *HashWriter) Add(key []byte, value []byte) error {
 	pos, err := dbfile.Tell()
 
 	//write key,value length
-	err = writeBinary(dbfile, uint32(len(key)))
+	err = utils.WriteUInt32(dbfile, uint32(len(key)))
 	if err != nil {
 		return err
 	}
-	err = writeBinary(dbfile, uint32(len(value)))
+	err = utils.WriteUInt32(dbfile, uint32(len(value)))
 	if err != nil {
 		return err
 	}
 
 	//write key and value
-	err = writeBinary(dbfile, key)
+	err = utils.WriteBytes(dbfile, key)
 	if err != nil {
 		return err
 	}
-	err = writeBinary(dbfile, value)
+	err = utils.WriteBytes(dbfile, value)
 	if err != nil {
 		return err
 	}
 
 	//get Hash for the key
 	h := writer.keyFunc(key)
-	writer.buckets[h&255].Add(h, pos)
+	writer.buckets[h&255].Add(h, uint64(pos))
 
 	return nil
 }
 
 func (writer *HashWriter) writePointer(entry *bucketEntry) error {
-	err := writeBinary(writer.file, entry.key)
+	err := utils.WriteUInt32(writer.file, entry.key)
 	if err != nil {
 		return err
 	}
-	err = writeBinary(writer.file, entry.pos)
+	err = utils.WriteUInt64(writer.file, entry.pos)
 	if err != nil {
 		return err
 	}
@@ -143,11 +138,11 @@ func (writer *HashWriter) writePointer(entry *bucketEntry) error {
 }
 
 func (writer *HashWriter) writeDictionary(entry *dictionaryEntry) error {
-	err := writeBinary(writer.file, entry.pos)
+	err := utils.WriteUInt64(writer.file, entry.pos)
 	if err != nil {
 		return err
 	}
-	err = writeBinary(writer.file, entry.num)
+	err = utils.WriteUInt32(writer.file, entry.num)
 	if err != nil {
 		return err
 	}
@@ -165,7 +160,7 @@ func (writer *HashWriter) writeHash() error {
 		numslots := 2 * len(entry.items)
 		hashtable := make([]bucketEntry, numslots)
 
-		writer.dictionary = append(writer.dictionary, dictionaryEntry{pos, numslots})
+		writer.dictionary = append(writer.dictionary, dictionaryEntry{uint64(pos), uint32(numslots)})
 		for _, entry := range entry.items {
 			slot := (entry.key >> uint32(8)) % uint32(numslots)
 			for hashtable[slot] != nullEntry {
@@ -204,7 +199,7 @@ func (writer *HashWriter) writerExtra() error {
 	}
 
 	// write extra value
-	err = writeBinary(writer.file, values)
+	err = utils.WriteBinary(writer.file, values)
 	if err != nil {
 		return err
 	}

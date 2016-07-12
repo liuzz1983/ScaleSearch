@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"github.com/liuzz1983/ScaleSearch/core/filedb"
+	"github.com/liuzz1983/scalesearch/core/filedb"
 )
 
 type W3Codec struct {

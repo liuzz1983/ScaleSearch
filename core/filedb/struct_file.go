@@ -1,12 +1,19 @@
 package filedb
 
+import (
+	"github.com/liuzz1983/scalesearch/utils/fs"
+)
+
 type StructFile struct {
-	file     File
+	file     fs.File
 	name     string
 	isClosed bool
 }
 
-func NewStructFile(fileObj File, name string) *StructFile {
+type OnClose func(*StructFile)
+
+// provide addition method for file operation
+func NewStructFile(fileObj fs.File, name string, onClose OnClose) *StructFile {
 	return &StructFile{
 		file:     fileObj,
 		name:     name,
@@ -14,7 +21,7 @@ func NewStructFile(fileObj File, name string) *StructFile {
 	}
 }
 
-func (fs *StructFile) RawFile() File {
+func (fs *StructFile) RawFile() fs.File {
 	return fs.file
 }
 
