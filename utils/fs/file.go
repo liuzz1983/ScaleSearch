@@ -73,6 +73,9 @@ type FileSystem interface {
 
 	// Stat returns an os.FileInfo describing the named file.
 	Stat(name string) (os.FileInfo, error)
+
+	// see whether file for dir exists 
+	IsExist( name string) bool
 }
 
 // DefaultFileSystem is a FileSystem implementation backed by the underlying
@@ -112,4 +115,12 @@ func (defFS) List(dir string) ([]string, error) {
 
 func (defFS) Stat(name string) (os.FileInfo, error) {
 	return os.Stat(name)
+}
+
+func(fs defFS) IsExist( name string) bool {
+	_, error := fs.Stat(name)
+	if error == nil {
+		return true
+	}
+	return os.IsExist(error)
 }
