@@ -1,7 +1,6 @@
 package core
 
 type Reader interface {
-	
 	Codec()
 	Segment()
 	Storage()

@@ -1,0 +1,12 @@
+
+memory structure for inverted index, 
+document will be seperated into terms 
+
+we need to store forward index and inverted index
+
+D = term1 term2 term2 term1 ...
+
+int the forward index, the text of D will be  segmented into 
+    vectors: docNum -> [( text, weight, vbytes), ....] 
+    docNum -> 
+

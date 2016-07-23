@@ -1,4 +1,4 @@
-package codec
+package whoosh
 
 import (
 	"github.com/liuzz1983/scalesearch/core/codec"

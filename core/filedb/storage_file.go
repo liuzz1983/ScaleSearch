@@ -5,8 +5,8 @@ import (
 	"github.com/liuzz1983/scalesearch/utils/fs"
 	"io"
 	"os"
-	"time"
 	"path/filepath"
+	"time"
 )
 
 type FileStorage struct {
@@ -52,7 +52,7 @@ func (store *FileStorage) fileStat(name string) (os.FileInfo, error) {
 	return info, err
 }
 
-// destroy the whole directory of storage,  
+// destroy the whole directory of storage,
 // but if the hidden file exists, this will error, we need use removeall ?
 func (store *FileStorage) Destory() error {
 	if store.readOnly {

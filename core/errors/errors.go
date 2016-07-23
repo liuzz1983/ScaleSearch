@@ -29,6 +29,7 @@ var (
 
 	// index error
 	ErrEmptyIndex = errors.New("index has no index terms")
+	ErrOutOfRange = errors.New("index out of range")
 )
 
 var (

@@ -16,7 +16,7 @@ type Storage interface {
 	OpenFile(name string, args map[string]string) (fs.File, error)
 	List() ([]string, error)
 	FileExists(name string) bool
-	
+
 	FileModified(name string) (time.Time, error)
 	FileLength(name string) (int64, error)
 	DeleteFile(name string) error
@@ -27,5 +27,3 @@ type Storage interface {
 	Sync() error
 	TmpStorage() (Storage, error)
 }
-
-

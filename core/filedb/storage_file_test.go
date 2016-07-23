@@ -1,15 +1,16 @@
 package filedb
 
-import  (
-	"os"
-	"testing"
+import (
 	"github.com/liuzz1983/scalesearch/utils/fs"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
+func testFileStorage(t *testing.T, fileSystem fs.FileSystem) {
 
-func TestCreateFileStorage(t *testing.T) { 
-	maindir := os.TempDir()
-	storage, error := NewFileStorage(maindir, fs.DefaultFileSystem)
+	maindir := filepath.Join(os.TempDir(), "tmp-test")
+	storage, error := NewFileStorage(maindir, fileSystem)
 	if error != nil {
 		t.Errorf("error in create storage %v", maindir)
 	}
@@ -19,10 +20,10 @@ func TestCreateFileStorage(t *testing.T) {
 		t.Errorf("error create main storage %v", maindir)
 	}
 
-	exists := fs.DefaultFileSystem.IsExist(maindir)
-	if ! exists {
-		stat, error := fs.DefaultFileSystem.Stat(maindir)
-		t.Errorf("error main storage is not exists %v, %v, %v %v", maindir, error, os.IsExist(error),stat)
+	exists := fileSystem.IsExist(maindir)
+	if !exists {
+		stat, error := fileSystem.Stat(maindir)
+		t.Errorf("error main storage is not exists %v, %v, %v %v", maindir, error, os.IsExist(error), stat)
 	}
 
 	error = storage.Destory()
@@ -30,7 +31,14 @@ func TestCreateFileStorage(t *testing.T) {
 		t.Errorf(" error in destory storage %v", error)
 	}
 
-	if fs.DefaultFileSystem.IsExist(maindir) {
+	if fileSystem.IsExist(maindir) {
 		t.Errorf("error main storage should be destoried %v", maindir)
 	}
+}
+
+func TestCeateMemFileStorage(t *testing.T) {
+
+	testFileStorage(t, fs.DefaultFileSystem)
+	testFileStorage(t, fs.NewMemFileSystem())
+
 }
