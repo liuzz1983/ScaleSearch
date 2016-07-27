@@ -1,8 +1,8 @@
 package memory
 
 import (
-	"github.com/liuzz1983/scalesearch/core"
 	"github.com/liuzz1983/scalesearch/core/filedb"
+	"github.com/liuzz1983/scalesearch/core/index"
 )
 
 type MemPerDocWriter struct {
@@ -15,7 +15,7 @@ type MemPerDocWriter struct {
 	docNum   int64
 	stored   map[string][]byte
 	lengths  map[string]int
-	vectors  map[string][]core.VectorItem
+	vectors  map[string][]index.VectorItem
 }
 
 func NewMemPerDocWriter(storage filedb.Storage, segment *MemSegment) *MemPerDocWriter {
@@ -37,7 +37,7 @@ func (writer *MemPerDocWriter) StartDoc(docNum int64) error {
 	writer.docNum = docNum
 	writer.stored = make(map[string][]byte)
 	writer.lengths = make(map[string]int)
-	writer.vectors = make(map[string][]core.VectorItem)
+	writer.vectors = make(map[string][]index.VectorItem)
 	return nil
 }
 
@@ -64,7 +64,7 @@ func (writer *MemPerDocWriter) AddColumnValue(fieldName string, columnObj interf
 	writer.columns[fieldName] = value
 	return nil
 }
-func (writer *MemPerDocWriter) AddVectorItems(fieldName string, fieldObj interface{}, items []core.VectorItem) error {
+func (writer *MemPerDocWriter) AddVectorItems(fieldName string, fieldObj interface{}, items []index.VectorItem) error {
 	writer.vectors[fieldName] = items
 	return nil
 }
@@ -140,7 +140,7 @@ func (reader *MemPerDocReader) MaxFieldLength(fieldName string) int {
 func (reader *MemPerDocReader) HasVector(docNum int64, fieldName string) bool {
 	panic("not implement")
 }
-func (reader *MemPerDocReader) Vector(docNum int64, fieldName string, format interface{}) core.VectorItem {
+func (reader *MemPerDocReader) Vector(docNum int64, fieldName string, format interface{}) index.VectorItem {
 	panic("not implement")
 }
 

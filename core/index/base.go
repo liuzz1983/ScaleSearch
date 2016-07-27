@@ -1,4 +1,4 @@
-package core
+package index
 
 type FieldTerm struct {
 	Field []byte

@@ -1,4 +1,4 @@
-package core
+package index
 
 type TermInfo struct {
 	Weight    float32

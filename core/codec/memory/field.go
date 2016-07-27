@@ -3,8 +3,8 @@ package memory
 import (
 	"errors"
 
-	"github.com/liuzz1983/scalesearch/core"
 	"github.com/liuzz1983/scalesearch/core/filedb"
+	"github.com/liuzz1983/scalesearch/core/index"
 )
 
 type MemFieldWriter struct {
@@ -17,7 +17,7 @@ type MemFieldWriter struct {
 	isClosed  bool
 
 	postings []int64
-	termInfo *core.TermInfo
+	termInfo *index.TermInfo
 }
 
 func (writer *MemFieldWriter) StartField(fieldName string, fieldObj interface{}) error {
@@ -50,7 +50,7 @@ func (writer *MemFieldWriter) StartTerm(term []byte) {
 	} else {
 		writer.postings = fieldDict.Postings(term)
 	}
-	fieldTerm := core.FieldTerm{
+	fieldTerm := index.FieldTerm{
 		Field: []byte(fieldName),
 		Term:  term,
 	}
@@ -59,7 +59,7 @@ func (writer *MemFieldWriter) StartTerm(term []byte) {
 
 	_, ok := termInfos[fieldTermId]
 	if !ok {
-		termInfos[fieldTermId] = &core.TermInfo{}
+		termInfos[fieldTermId] = &index.TermInfo{}
 	}
 	writer.termInfo = termInfos[fieldTermId]
 	writer.term = term
@@ -78,21 +78,21 @@ func NewMemTermReader(storage filedb.Storage, segment *MemSegment) *MemTermsRead
 	}
 }
 
-func (reader *MemTermsReader) Contains(term *core.FieldTerm) bool {
+func (reader *MemTermsReader) Contains(term *index.FieldTerm) bool {
 	return reader.segment.ContainTerm(term)
 }
 
-func (reader *MemTermsReader) Terms() []core.FieldTerm {
-	terms := make([]core.FieldTerm, 0)
+func (reader *MemTermsReader) Terms() []index.FieldTerm {
+	terms := make([]index.FieldTerm, 0)
 	for fieldName, invIndex := range reader.segment.invIndex {
 		for term, _ := range invIndex {
-			terms = append(terms, core.FieldTerm{[]byte(fieldName), []byte(term)})
+			terms = append(terms, index.FieldTerm{[]byte(fieldName), []byte(term)})
 		}
 	}
 	return terms
 }
 
-func (reader *MemTermsReader) TermsFrom(fieldName string, prefix []byte) []core.FieldTerm {
+func (reader *MemTermsReader) TermsFrom(fieldName string, prefix []byte) []index.FieldTerm {
 	/*
 	       if fieldname not in self._invindex:
 	       raise TermNotFound("Unknown field %r" % (fieldname,))
@@ -106,8 +106,8 @@ func (reader *MemTermsReader) TermsFrom(fieldName string, prefix []byte) []core.
 	panic("not impl")
 }
 
-func (reader *MemTermsReader) TermInfo(fieldName string, term []byte) *core.TermInfo {
-	v := &core.FieldTerm{[]byte(fieldName), term}
+func (reader *MemTermsReader) TermInfo(fieldName string, term []byte) *index.TermInfo {
+	v := &index.FieldTerm{[]byte(fieldName), term}
 	return reader.segment.termInfos[v.Id()]
 }
 

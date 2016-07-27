@@ -1,6 +1,8 @@
 package core
 
+import "github.com/liuzz1983/scalesearch/core/document"
+
 type Indexer interface {
-	add(docId string, doc Document)
-	del(docId string)
+	Add(docId string, doc document.Document)
+	Del(docId string)
 }

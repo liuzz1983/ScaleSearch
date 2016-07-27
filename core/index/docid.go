@@ -1,4 +1,4 @@
-package core
+package index
 
 import "github.com/liuzz1983/scalesearch/core/errors"
 

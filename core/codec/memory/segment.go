@@ -3,9 +3,9 @@ package memory
 import (
 	"sync"
 
-	"github.com/liuzz1983/scalesearch/core"
 	"github.com/liuzz1983/scalesearch/core/codec"
 	"github.com/liuzz1983/scalesearch/core/codec/base"
+	"github.com/liuzz1983/scalesearch/core/index"
 )
 
 // use memory structure to store document and inverted index
@@ -20,12 +20,12 @@ type MemSegment struct {
 	// docNum, fieldName, lengths
 	lengths map[int64]map[string]int
 	// document vector term,
-	vectors map[int64]map[string][]core.VectorItem
+	vectors map[int64]map[string][]index.VectorItem
 
 	// inverted index for store
 	invIndex map[string]InvIndex
 	// term information
-	termInfos map[string]*core.TermInfo
+	termInfos map[string]*index.TermInfo
 
 	// lock for the structure
 	lock sync.Mutex
@@ -98,7 +98,7 @@ func (seg *MemSegment) DeletedDocs() []int64 {
 }
 
 // whether the term in the segment
-func (seg *MemSegment) ContainTerm(term *core.FieldTerm) bool {
+func (seg *MemSegment) ContainTerm(term *index.FieldTerm) bool {
 	_, ok := seg.termInfos[term.Id()]
 	return ok
 }

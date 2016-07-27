@@ -1,11 +1,11 @@
 package memory
 
-import "github.com/liuzz1983/scalesearch/core"
+import "github.com/liuzz1983/scalesearch/core/index"
 
 type MemPostringWriter struct {
 }
 
-func (writer *MemPostringWriter) StartPostings(format core.Format, terminfo core.TermInfo) error {
+func (writer *MemPostringWriter) StartPostings(format index.Format, terminfo index.TermInfo) error {
 	panic("not imp")
 }
 func (writer *MemPostringWriter) AddPosting(id int64, weight float32, vbytes []byte) error {

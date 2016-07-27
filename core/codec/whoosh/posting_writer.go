@@ -3,8 +3,8 @@ package whoosh
 import (
 	"os"
 
-	"github.com/liuzz1983/scalesearch/core"
 	"github.com/liuzz1983/scalesearch/core/errors"
+	"github.com/liuzz1983/scalesearch/core/index"
 	"github.com/liuzz1983/scalesearch/utils/fs"
 )
 
@@ -15,8 +15,8 @@ type W3PostingsWriter struct {
 	InlineLimit int
 
 	BlockCount int
-	Format     core.Format
-	TermInfo   *core.TermInfo
+	Format     index.Format
+	TermInfo   *index.TermInfo
 
 	StartOffset int64
 
@@ -40,7 +40,7 @@ func NewW3PostingsWriter(postfile fs.File, blocklimit int,
 	}
 }
 
-func (writer *W3PostingsWriter) StartPostings(format core.Format, termInfo *core.TermInfo) error {
+func (writer *W3PostingsWriter) StartPostings(format index.Format, termInfo *index.TermInfo) error {
 	if writer.TermInfo != nil {
 		return errors.New("can not start in a term")
 	}

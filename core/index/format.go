@@ -1,4 +1,4 @@
-package core
+package index
 
 import (
 	"github.com/liuzz1983/scalesearch/core/analysis"
@@ -36,8 +36,12 @@ func (pos *Positions) WordValues(value string, analyzer analysis.Analyzer) ([]In
 	fb := pos.FieldBoost
 	weights := make(map[string]float32)
 	poses := make(map[string][]int32)
-	for _, term := range analyzer.Parse(value) {
-		name := string(term.Value)
+	tokens, err := analyzer.Parse(value)
+	if err != nil {
+		return nil, err
+	}
+	for _, term := range tokens {
+		name := string(term.Text)
 		datas, ok := poses[name]
 		if !ok {
 			datas = make([]int32, 0, DefaultPosLen)
